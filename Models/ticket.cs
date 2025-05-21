@@ -17,4 +17,19 @@ namespace APITicketPro.Models
         public DateTime fecha_inicio { get; set; }
         public DateTime fecha_fin {  get; set; }
     }
+
+    public class ticketDetalleDTO { 
+        public string Titulo { get; set; }
+        public string Servicio { get; set; }
+        public string Descripcion { get; set; }
+        public string Cliente_Afectado{ get; set; }
+        public string Correo { get; set; }
+        public string Telefono { get; set; }
+        public string Url_Archivo { get; set; }
+        public string Codigo { get; set; }
+        public string Categoria_Ticket { get; set; }
+        public string Prioridad { get; set; }
+        public string Estado { get; set; }
+    }
+
 }
