@@ -60,5 +60,8 @@ namespace APITicketPro.Controllers
             return Ok(tickets);
         }
 
+        // Crear Tickets
+
+
     }
 }
