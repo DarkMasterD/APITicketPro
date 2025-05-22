@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("https://localhost:7130") // Puerto del frontend
+        policy => policy.WithOrigins("https://localhost:7130", "https://localhost:7298") // Puerto del frontend
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });

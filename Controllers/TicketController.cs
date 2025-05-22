@@ -60,7 +60,44 @@ namespace APITicketPro.Controllers
             return Ok(tickets);
         }
 
-        // Crear Tickets
+        [HttpGet("generar-codigo")]
+        public async Task<IActionResult> GenerarCodigo([FromQuery] string prioridad, [FromQuery] char tipoUsuario)
+        {
+            string codigoGenerado = string.Empty;
+
+            using (var connection = _context.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "GenerarCodigoTicket";
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                    var param1 = command.CreateParameter();
+                    param1.ParameterName = "@Prioridad";
+                    param1.Value = prioridad;
+                    command.Parameters.Add(param1);
+
+                    var param2 = command.CreateParameter();
+                    param2.ParameterName = "@TipoUsuario";
+                    param2.Value = tipoUsuario;
+                    command.Parameters.Add(param2);
+
+                    var output = command.CreateParameter();
+                    output.ParameterName = "@CodigoGenerado";
+                    output.DbType = System.Data.DbType.String;
+                    output.Size = 50;
+                    output.Direction = System.Data.ParameterDirection.Output;
+                    command.Parameters.Add(output);
+
+                    await command.ExecuteNonQueryAsync();
+                    codigoGenerado = output.Value.ToString();
+                }
+            }
+
+            return Ok(new { codigo = codigoGenerado });
+        }
 
 
     }

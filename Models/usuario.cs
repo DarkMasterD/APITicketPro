@@ -16,4 +16,5 @@ public class usuario
     public usuario_externo usuario_externo { get; set; }
 
     public ICollection<ticket> tickets { get; set; }
+    public ICollection<contacto_usuario> contactos { get; set; }
 }
