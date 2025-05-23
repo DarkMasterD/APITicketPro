@@ -110,5 +110,39 @@ namespace APITicketPro.Controllers
 
             return Ok(new { message = "Ticket creado", id = nuevoTicket.id_ticket });
         }
+
+        // Agregar archivo por ticket
+        [HttpPost("subir-archivo")]
+        public async Task<IActionResult> SubirArchivo(IFormFile archivo, [FromForm] int id_ticket)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return BadRequest("Archivo no válido");
+
+            var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(archivo.FileName);
+            var rutaCarpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "archivos_ticket");
+
+            if (!Directory.Exists(rutaCarpeta))
+                Directory.CreateDirectory(rutaCarpeta);
+
+            var rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await archivo.CopyToAsync(stream);
+            }
+
+            // Guardar en la base de datos
+            var archivoTicket = new ticket_archivo
+            {
+                id_ticket = id_ticket,
+                url = "/archivos_ticket/" + nombreArchivo, // se guarda la ruta relativa
+                fecha = DateTime.Now
+            };
+
+            _context.ticket_archivo.Add(archivoTicket);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Archivo subido exitosamente" });
+        }
+
     }
 }

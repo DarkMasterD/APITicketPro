@@ -42,6 +42,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseStaticFiles(); // Esto habilita wwwroot
+
 app.MapControllers();
 
 app.Run();
