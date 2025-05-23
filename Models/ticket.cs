@@ -32,4 +32,10 @@ namespace APITicketPro.Models
         public string Estado { get; set; }
     }
 
+    public class ticketEstadoUpdateModel
+    {
+        public int id_ticket { get; set; }
+        public string estado { get; set; }
+    }
+
 }

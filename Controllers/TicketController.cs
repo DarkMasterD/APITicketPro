@@ -1,6 +1,7 @@
 ﻿using APITicketPro.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static System.Net.WebRequestMethods;
 
 namespace APITicketPro.Controllers
 {
@@ -24,9 +25,8 @@ namespace APITicketPro.Controllers
 
         [HttpGet]
         [Route("ListarDetalle")]
-        public IActionResult ListarDetalle()
+        public IActionResult ListarDetalle(int idTicket)
         {
-            int idTicket = 2; // Cambiar cuando se pase desde la vista anterior
 
             var datosDetalle = (from t in _context.ticket
                                 join u in _context.usuario on t.id_usuario equals u.id_usuario
@@ -72,6 +72,34 @@ namespace APITicketPro.Controllers
                                 });
 
             return Ok(datosDetalle.ToList());
+        }
+
+        [HttpPost]
+        [Route("actualizarTicket")]
+        public IActionResult ActualizarTicket([FromBody] ticketEstadoUpdateModel model)
+        {
+            if (model == null || model.id_ticket <= 0 || string.IsNullOrEmpty(model.estado))
+            {
+                return BadRequest("Datos inválidos");
+            }
+
+            var ticket = _context.ticket.FirstOrDefault(t => t.id_ticket == model.id_ticket);
+            if (ticket == null)
+            {
+                return NotFound("Ticket no encontrado");
+            }
+
+            ticket.estado = model.estado;
+            _context.SaveChanges();
+
+            return Ok("Ticket actualizado correctamente");
+        }
+
+        [HttpGet]
+        [Route("ListarTareasTicket")]
+        public IActionResult ListarTareasTicket(int id_ticket)
+        {
+
         }
     }
 }
