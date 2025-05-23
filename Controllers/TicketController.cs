@@ -97,12 +97,40 @@ namespace APITicketPro.Controllers
             return Ok("Ticket actualizado correctamente");
         }
 
-        //[HttpGet]
-        //[Route("ListarTareasTicket")]
-        //public IActionResult ListarTareasTicket(int id_ticket)
-        //{
+        [HttpGet]
+        [Route("VerTareasDelTicket")]
+        public IActionResult VerTareasDelTicket(int idTicket)
+        {
+            // Verificar si el ticket existe
+            var ticket = (from t in _context.ticket
+                          where t.id_ticket == idTicket
+                          select t).FirstOrDefault();
+            if (ticket == null)
+                return NotFound();
 
-        //}
+            // Unimos tarea_ticket con usuario_interno
+            var tareas = (from tarea in _context.tarea_ticket
+                          join usuario in _context.usuario_interno
+                          on tarea.id_usuario_interno equals usuario.id_usuario_interno
+                          where tarea.id_ticket == idTicket
+                          select new TareaTicketItem
+                          {
+                              Nombre = tarea.nombre,
+                              Estado = tarea.estado,
+                              FechaInicio = tarea.fecha_inicio,
+                              UsuarioAsignado = usuario.nombre + " " + usuario.apellido
+                          }).ToList();
+
+            // Construir el ViewModel
+            var viewModel = new tareaTicketViewModel
+            {
+                IdTicket = ticket.id_ticket,
+                Codigo = ticket.codigo,
+                Tareas = tareas
+            };
+
+            return Ok(viewModel);
+        }
 
         // Método para obtener el contador de tickets del dashboard de administrador
         [HttpGet("resumen-dashboard")]
