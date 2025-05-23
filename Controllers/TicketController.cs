@@ -95,11 +95,11 @@ namespace APITicketPro.Controllers
             return Ok("Ticket actualizado correctamente");
         }
 
-        [HttpGet]
-        [Route("ListarTareasTicket")]
-        public IActionResult ListarTareasTicket(int id_ticket)
-        {
+        //[HttpGet]
+        //[Route("ListarTareasTicket")]
+        //public IActionResult ListarTareasTicket(int id_ticket)
+        //{
 
-        }
+        //}
     }
 }
