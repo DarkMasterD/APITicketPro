@@ -98,7 +98,17 @@ namespace APITicketPro.Controllers
 
             return Ok(new { codigo = codigoGenerado });
         }
+        // crear ticket 
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] ticket nuevoTicket)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            _context.ticket.Add(nuevoTicket);
+            await _context.SaveChangesAsync();
 
+            return Ok(new { message = "Ticket creado", id = nuevoTicket.id_ticket });
+        }
     }
 }
