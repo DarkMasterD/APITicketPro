@@ -20,7 +20,7 @@ public class ticket
     public string estado { get; set; }
 
     public DateTime fecha_inicio { get; set; }
-    public DateTime fecha_fin { get; set; }
+    public DateTime? fecha_fin { get; set; } //Le agrege si es null por que si no esta cerrado no tiene fecha
 
     public ICollection<tarea_ticket> tareas { get; set; }
 }
@@ -44,14 +44,19 @@ public class ticketEstadoUpdateModel
 {
     public int id_ticket { get; set; }
     public string estado { get; set; }
+    // Campos para registrar progreso
+    public int? id_usuario_interno { get; set; } 
+    public string? nombre_progreso { get; set; }
+    public string? descripcion_progreso { get; set; }
 }
 
 public class TareaTicketItem
 {
     public string Nombre { get; set; }
     public string Estado { get; set; }
-    public DateTime Fecha { get; set; }
-    public usuario_interno UsuarioAsignado { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime? FechaFin { get; set; }  // Puede ser null
+    public string UsuarioAsignado { get; set; } // Nombre completo del usuario
 }
 
 public class tareaTicketViewModel
