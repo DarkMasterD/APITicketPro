@@ -76,6 +76,21 @@ namespace APITicketPro.Controllers
             return Ok(datosDetalle.ToList());
         }
 
+        private void InsertarProgreso(int id_ticket, int id_usuario_interno, string nombre, string descripcion)
+        {
+            var progreso = new progreso_ticket
+            {
+                id_ticket = id_ticket,
+                id_usuario_interno = id_usuario_interno,
+                nombre = nombre,
+                descripcion = descripcion,
+                fecha = DateTime.Now
+            };
+
+            _context.progreso_ticket.Add(progreso);
+        }
+
+
         [HttpPost]
         [Route("actualizarTicket")]
         public IActionResult ActualizarTicket([FromBody] ticketEstadoUpdateModel model)
@@ -92,10 +107,22 @@ namespace APITicketPro.Controllers
             }
 
             ticket.estado = model.estado;
+
+            if(model.id_usuario_interno.HasValue && !string.IsNullOrEmpty(model.nombre_progreso))
+            {
+                InsertarProgreso(
+                    model.id_ticket,
+                    model.id_usuario_interno.Value,
+                    model.nombre_progreso,
+                    model.descripcion_progreso ?? "Sin descripción"
+                );
+            }
+
             _context.SaveChanges();
 
             return Ok("Ticket actualizado correctamente");
         }
+
 
         [HttpGet]
         [Route("VerTareasDelTicket")]
