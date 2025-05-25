@@ -1,5 +1,6 @@
 ﻿using APITicketPro.Models;
 using APITicketPro.Models.Admin;
+using APITicketPro.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -182,7 +183,91 @@ namespace APITicketPro.Controllers
             return Ok(model);
         }
 
+        //Actualizar ===============================
+        [HttpPost("actualizar-estado")]
+        public async Task<IActionResult> ActualizarEstado([FromBody] ActualizarEstadoDTO dto)
+        {
+            var ticket = await _context.ticket.FindAsync(dto.IdTicket);
+            if (ticket == null) return NotFound();
+
+            ticket.estado = dto.NuevoEstado;
+
+            if (dto.NuevoEstado == "Resuelto" && ticket.fecha_fin == default)
+            {
+                ticket.fecha_fin = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Estado actualizado correctamente" });
+        }
+
+        [HttpPost("registrar-progreso")]
+        public async Task<IActionResult> RegistrarProgreso([FromBody] ProgresoTicketDTO dto)
+        {
+            var progreso = new progreso_ticket
+            {
+                id_ticket = dto.IdTicket,
+                id_usuario_interno = 1, // fijo por ahora
+                nombre = "Progreso",
+                descripcion = dto.Descripcion,
+                fecha = DateTime.Now
+            };
+
+            _context.progreso_ticket.Add(progreso);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Progreso guardado" });
+        }
+
+        [HttpPost("notificar-cliente")]
+        public async Task<IActionResult> NotificarCliente([FromBody] NotificarDTO dto, [FromServices] EmailService emailService)
+        {
+            var ticket = await _context.ticket
+                .Include(t => t.usuario)
+                .ThenInclude(u => u.usuario_externo)
+                .Include(t => t.tareas)
+                .ThenInclude(t => t.usuario_interno)
+                .FirstOrDefaultAsync(t => t.id_ticket == dto.IdTicket);
+
+            if (ticket == null) return NotFound();
+
+            var correo = ticket.usuario.email;
+            var tecnico = ticket.tareas.FirstOrDefault()?.usuario_interno;
+            //Este es el cuerpo del correo
+            var cuerpo = $@"
+                            <div style='font-family: Arial, sans-serif; font-size: 16px; color: #333;'>
+                                <p>Estimado cliente,</p>
+
+                                <p>
+                                    Hemos revisado su ticket <strong>“{ticket.titulo}”</strong>, sin embargo, necesitamos información adicional para poder continuar con el proceso de resolución.
+                                </p>
+
+                                <p>
+                                    Le solicitamos por favor ponerse en contacto con el técnico asignado a su caso para brindarle más detalles:
+                                </p>
+
+                                <div style='background-color: #f5f5f5; padding: 12px; border-left: 4px solid #2196f3; margin: 10px 0;'>
+                                    <p style='margin: 0;'><strong>Nombre del técnico:</strong> {tecnico?.nombre} {tecnico?.apellido}</p>
+                                    <p style='margin: 0;'><strong>Área:</strong> {ticket.servicio}</p>
+                                    <p style='margin: 0;'><strong>Estado del ticket:</strong> {ticket.estado}</p>
+                                </div>
+
+                                <p>
+                                    Agradecemos su comprensión y quedamos atentos a su pronta respuesta para continuar con el seguimiento de su solicitud.
+                                </p>
+
+                                <p style='margin-top: 25px;'>Atentamente,<br /><strong>Equipo de Soporte Técnico - TicketPro</strong></p>
+                            </div>
+                            ";
 
 
+            await emailService.EnviarNotificacion(correo, "Se requiere más información - TicketPro", cuerpo);
+
+            return Ok(new { mensaje = "Correo enviado" });
+        }
+
+
+        // ===============================
     }
 }

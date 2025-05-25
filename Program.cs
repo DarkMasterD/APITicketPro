@@ -1,4 +1,5 @@
 using APITicketPro.Models;
+using APITicketPro.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,10 @@ builder.Services.AddDbContext<DBTicketProContext>(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//Para correos Gmail
+builder.Services.AddScoped<EmailService>();
+
 
 var app = builder.Build();
 
