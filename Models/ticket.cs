@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class ticket
 {
@@ -11,7 +12,7 @@ public class ticket
     public int id_usuario { get; set; }
 
     [ForeignKey("id_usuario")]
-    public usuario usuario { get; set; }
+    public usuario? usuario { get; set; }
 
     public int id_categoria_ticket { get; set; }
     public string servicio { get; set; }
@@ -24,6 +25,8 @@ public class ticket
     public DateTime? fecha_fin { get; set; } //Le agrege si es null por que si no esta cerrado no tiene fecha
 
     public ICollection<tarea_ticket> tareas { get; set; }
+    [ForeignKey("id_categoria_ticket")]
+    public categoria_ticket? categoria_ticket { get; set; }
 }
 
 public class ticketDetalleDTO
