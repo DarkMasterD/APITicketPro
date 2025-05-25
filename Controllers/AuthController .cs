@@ -44,9 +44,10 @@ namespace APITicketPro.Controllers
                 .FirstOrDefault(u => u.id_usuario == id_usuario);
 
             if (interno != null)
-                return Ok(interno.rol.nombre);
+                return Ok(interno.rol.nombre.ToLower()); // 👈 MUY IMPORTANTE
 
-            return Ok("Cliente");
+            return Ok("cliente");
         }
+
     }
 }
