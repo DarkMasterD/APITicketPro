@@ -153,6 +153,8 @@ namespace APITicketPro.Controllers
             {
                 IdTicket = ticket.id_ticket,
                 Codigo = ticket.codigo,
+                Titulo = ticket.titulo,
+                Descripcion = ticket.descripcion,
                 Tareas = tareas
             };
 

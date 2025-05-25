@@ -1,4 +1,5 @@
 ﻿using APITicketPro.Models;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -63,6 +64,8 @@ public class tareaTicketViewModel
 {
     public int IdTicket { get; set; }
     public string Codigo { get; set; }
+    public string Titulo { get; set; }
+    public string Descripcion { get; set; }
     public List<TareaTicketItem> Tareas { get; set; }
 }
 
