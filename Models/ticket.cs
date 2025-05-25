@@ -26,4 +26,6 @@ public class ticket
     public DateTime fecha_fin { get; set; }
 
     public ICollection<tarea_ticket> tareas { get; set; }
+    [ForeignKey("id_categoria_ticket")]
+    public categoria_ticket? categoria_ticket { get; set; }
 }

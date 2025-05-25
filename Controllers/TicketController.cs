@@ -48,6 +48,7 @@ namespace APITicketPro.Controllers
                     .ThenInclude(tt => tt.usuario_interno)
                 .Select(t => new TicketResumenDTO
                 {
+                    IdTicket = t.id_ticket,
                     Titulo = t.titulo,
                     Cliente = t.usuario.usuario_externo.nombre + " " + t.usuario.usuario_externo.apellido,
                     Tecnico = t.tareas.FirstOrDefault().usuario_interno.nombre ?? "No asignado",
@@ -143,6 +144,45 @@ namespace APITicketPro.Controllers
 
             return Ok(new { message = "Archivo subido exitosamente" });
         }
+
+        //Detalle del ticket
+        [HttpGet("detalle/{id}")]
+        public async Task<IActionResult> ObtenerDetalle(int id)
+        {
+            var ticket = await _context.ticket
+                .Include(t => t.usuario)
+                    .ThenInclude(u => u.usuario_externo)
+                .Include(t => t.usuario.contactos)
+                .Include(t => t.categoria_ticket)
+                .FirstOrDefaultAsync(t => t.id_ticket == id);
+
+            if (ticket == null) return NotFound();
+
+            var archivo = await _context.ticket_archivo
+                .Where(a => a.id_ticket == id)
+                .OrderByDescending(a => a.fecha)
+                .FirstOrDefaultAsync();
+
+            var model = new TicketDetalleViewModel
+            {
+                IdTicket = ticket.id_ticket,
+                Codigo = ticket.codigo,
+                Titulo = ticket.titulo,
+                Servicio = ticket.servicio,
+                Descripcion = ticket.descripcion,
+                Categoria = ticket.categoria_ticket.nombre,
+                Prioridad = ticket.prioridad,
+                Estado = ticket.estado,
+                UrlArchivo = archivo?.url,
+                ClienteNombre = ticket.usuario.usuario_externo?.nombre + " " + ticket.usuario.usuario_externo?.apellido,
+                ClienteCorreo = ticket.usuario.email,
+                ClienteTelefono = ticket.usuario.contactos.FirstOrDefault()?.telefono
+            };
+
+            return Ok(model);
+        }
+
+
 
     }
 }
