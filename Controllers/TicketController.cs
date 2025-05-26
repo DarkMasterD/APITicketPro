@@ -405,8 +405,45 @@ namespace APITicketPro.Controllers
             return Ok(new { mensaje = "Correo enviado" });
         }
 
+        [HttpGet("tickets-cliente/{idUsuario}")]
+        public IActionResult TicketsPorCliente(int idUsuario)
+        {
+            var lista = _context.ticket
+                .Include(t => t.categoria_ticket)
+                .Where(t => t.id_usuario == idUsuario)
+                .Select(t => new
+                {
+                    t.id_ticket,
+                    t.titulo,
+                    t.estado,
+                    categoria = t.categoria_ticket.nombre,
+                    t.prioridad,
+                    t.fecha_inicio
+                }).ToList();
+
+            return Ok(lista);
+        }
+
+        [HttpGet("progreso/{id_ticket}")]
+        public IActionResult ObtenerProgresosPorTicket(int id_ticket)
+        {
+            var progresos = (from p in _context.progreso_ticket
+                             join t in _context.usuario_interno on p.id_usuario_interno equals t.id_usuario_interno
+                             where p.id_ticket == id_ticket
+                             orderby p.fecha
+                             select new
+                             {
+                                 NombreTecnico = t.nombre + " " + t.apellido,
+                                 Descripcion = p.descripcion,
+                                 Fecha = p.fecha
+                             }).ToList();
+
+            return Ok(progresos);
+        }
+
+
 
         // ===============================
-        
+
     }
 }
