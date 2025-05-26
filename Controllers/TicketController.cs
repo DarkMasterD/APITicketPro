@@ -403,9 +403,6 @@ namespace APITicketPro.Controllers
 
             return Ok(new { mensaje = "Correo enviado" });
         }
-
-
-        // ===============================
         // Tickets por categoría
         [HttpGet("dashboard-categoria")]
         public IActionResult TicketsPorCategoria()
