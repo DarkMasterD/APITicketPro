@@ -1,7 +1,8 @@
-﻿using APITicketPro.Models;
+using APITicketPro.Models;
 using APITicketPro.Models.Admin;
 using APITicketPro.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using static System.Net.WebRequestMethods;
 
@@ -56,6 +57,7 @@ namespace APITicketPro.Controllers
 
                                 select new ticketDetalleDTO
                                 {
+                                    id_ticket =t.id_ticket,
                                     Titulo = t.titulo,
                                     Servicio = t.servicio,
                                     Descripcion = t.descripcion,
@@ -149,6 +151,14 @@ namespace APITicketPro.Controllers
                               UsuarioAsignado = usuario.nombre + " " + usuario.apellido
                           }).ToList();
 
+            // Obtener los técnicos (aquí puedes filtrar por rol si lo deseas)
+            var tecnicos = _context.usuario_interno
+                .Select(u => new SelectListItem
+                {
+                    Value = u.id_usuario_interno.ToString(),
+                    Text = u.nombre + " " + u.apellido
+                }).ToList();
+
             // Construir el ViewModel
             var viewModel = new tareaTicketViewModel
             {
@@ -156,10 +166,46 @@ namespace APITicketPro.Controllers
                 Codigo = ticket.codigo,
                 Titulo = ticket.titulo,
                 Descripcion = ticket.descripcion,
-                Tareas = tareas
+                Tareas = tareas,
+                Tecnicos = tecnicos
             };
 
             return Ok(viewModel);
+        }
+
+        [HttpPost]
+        [Route("AgregarNuevaTarea")]
+        public IActionResult AgregarTarea([FromBody] NuevaTareaDto nuevaTarea)
+        {
+            // Validar existencia del ticket
+            var ticket = _context.ticket.FirstOrDefault(t => t.id_ticket == nuevaTarea.IdTicket);
+            if (ticket == null)
+                return NotFound("Ticket no encontrado");
+
+            // Validar existencia del técnico (usuario_interno)
+            var tecnico = _context.usuario_interno.FirstOrDefault(u => u.id_usuario_interno == nuevaTarea.IdUsuarioInterno);
+            if (tecnico == null)
+                return NotFound("Técnico no encontrado");
+
+            // Validar campos mínimos
+            if (string.IsNullOrWhiteSpace(nuevaTarea.Nombre) || string.IsNullOrWhiteSpace(nuevaTarea.Descripcion) || string.IsNullOrWhiteSpace(nuevaTarea.Estado))
+                return BadRequest("Faltan datos obligatorios");
+
+            // Crear la tarea
+            var tarea = new tarea_ticket
+            {
+                id_ticket = nuevaTarea.IdTicket,
+                id_usuario_interno = nuevaTarea.IdUsuarioInterno,
+                nombre = nuevaTarea.Nombre,
+                descripcion = nuevaTarea.Descripcion,
+                estado = nuevaTarea.Estado,
+                fecha_inicio = nuevaTarea.FechaInicio
+            };
+
+            _context.tarea_ticket.Add(tarea);
+            _context.SaveChanges();
+
+            return Ok(new { mensaje = "Tarea creada correctamente", idTarea = tarea.id_tarea_ticket });
         }
 
         // Método para obtener el contador de tickets del dashboard de administrador
@@ -545,6 +591,41 @@ public IActionResult TiemposPromedioPorDia()
 }
 
 
+        [HttpGet("tickets-cliente/{idUsuario}")]
+        public IActionResult TicketsPorCliente(int idUsuario)
+        {
+            var lista = _context.ticket
+                .Include(t => t.categoria_ticket)
+                .Where(t => t.id_usuario == idUsuario)
+                .Select(t => new
+                {
+                    t.id_ticket,
+                    t.titulo,
+                    t.estado,
+                    categoria = t.categoria_ticket.nombre,
+                    t.prioridad,
+                    t.fecha_inicio
+                }).ToList();
+
+            return Ok(lista);
+        }
+
+        [HttpGet("progreso/{id_ticket}")]
+        public IActionResult ObtenerProgresosPorTicket(int id_ticket)
+        {
+            var progresos = (from p in _context.progreso_ticket
+                             join t in _context.usuario_interno on p.id_usuario_interno equals t.id_usuario_interno
+                             where p.id_ticket == id_ticket
+                             orderby p.fecha
+                             select new
+                             {
+                                 NombreTecnico = t.nombre + " " + t.apellido,
+                                 Descripcion = p.descripcion,
+                                 Fecha = p.fecha
+                             }).ToList();
+
+            return Ok(progresos);
+        }
 
     }
 
