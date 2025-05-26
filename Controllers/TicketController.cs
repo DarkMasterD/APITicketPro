@@ -487,9 +487,5 @@ namespace APITicketPro.Controllers
             return Ok(progresos);
         }
 
-
-
-        // ===============================
-
     }
 }
