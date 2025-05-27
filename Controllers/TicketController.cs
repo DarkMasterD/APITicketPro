@@ -487,9 +487,39 @@ namespace APITicketPro.Controllers
             return Ok(progresos);
         }
 
+        [HttpGet("historial-tecnico/{idTecnico}")]
+        public async Task<IActionResult> ObtenerHistorialPorTecnico(int idTecnico)
+        {
+            var historial = await _context.tarea_ticket
+                .Include(t => t.ticket)
+                    .ThenInclude(t => t.categoria_ticket)
+                .Where(t => t.id_usuario_interno == idTecnico)
+                .Select(t => new
+                {
+                    IdTicket = t.id_ticket,
+                    Titulo = t.ticket.titulo,
+                    Estado = t.ticket.estado,
+                    Categoria = t.ticket.categoria_ticket.nombre,
+                    Prioridad = t.ticket.prioridad,
+                    Fecha = t.ticket.fecha_inicio
+                })
+                .Distinct()
+                .ToListAsync();
 
+            return Ok(historial);
+        }
+        [HttpPost("ActualizarTarea")]
+        public IActionResult ActualizarTarea([FromBody] NuevaTareaDto tareaEditada)
+        {
+            var tarea = _context.tarea_ticket.FirstOrDefault(t => t.id_ticket == tareaEditada.IdTicket && t.nombre == tareaEditada.Nombre);
+            if (tarea == null)
+                return NotFound("Tarea no encontrada");
 
-        // ===============================
+            tarea.estado = tareaEditada.Estado;
+            tarea.descripcion = tareaEditada.Descripcion;
 
+            _context.SaveChanges();
+            return Ok(new { mensaje = "Tarea actualizada correctamente" });
+        }
     }
 }
