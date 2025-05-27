@@ -1,4 +1,4 @@
-﻿using APITicketPro.Models;
+using APITicketPro.Models;
 using APITicketPro.Models.Admin;
 using APITicketPro.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -216,7 +216,6 @@ namespace APITicketPro.Controllers
             {
                 TicketsNoAsignados = _context.ticket.Count(t => t.estado == "No asignado"),
                 TicketsEnProgreso = _context.ticket.Count(t => t.estado == "En Progreso"),
-                TicketsCriticos = _context.ticket.Count(t => t.prioridad == "Crítico"),
                 TicketsResueltos = _context.ticket.Count(t => t.estado == "Resuelto")
             };
 
@@ -450,6 +449,147 @@ namespace APITicketPro.Controllers
 
             return Ok(new { mensaje = "Correo enviado" });
         }
+        // Tickets por categoría
+        [HttpGet("dashboard-categoria")]
+        public IActionResult TicketsPorCategoria()
+        {
+            var resultado = _context.ticket
+                .Include(t => t.categoria_ticket)
+                .GroupBy(t => t.categoria_ticket.nombre)
+                .Select(g => new
+                {
+                    Categoria = g.Key,
+                    Tickets = g.Count()
+                })
+                .ToList();
+
+            return Ok(resultado);
+        }
+
+        // Rendimiento por técnico (tickets resueltos por técnico)
+        [HttpGet("dashboard-tecnico")]
+        public IActionResult RendimientoPorTecnico()
+        {
+            var resultado = _context.tarea_ticket
+                .Where(t => t.estado == "Finalizada")
+                .Include(t => t.usuario_interno)
+                .GroupBy(t => new { t.usuario_interno.nombre, t.usuario_interno.apellido })
+                .Select(g => new
+                {
+                    Tecnico = g.Key.nombre + " " + g.Key.apellido,
+                    TicketsResueltos = g.Count()
+                })
+                .ToList();
+
+            return Ok(resultado);
+        }
+        [HttpGet("resumen-dashboard-filtrado")]
+        public IActionResult ObtenerResumenFiltrado([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] string? categoria, [FromQuery] string? prioridad, [FromQuery] string? estado)
+        {
+            var query = _context.ticket
+                .Include(t => t.categoria_ticket)
+                .AsQueryable();
+
+            if (fechaInicio.HasValue)
+                query = query.Where(t => t.fecha_inicio >= fechaInicio.Value);
+            if (fechaFin.HasValue)
+                query = query.Where(t => t.fecha_inicio <= fechaFin.Value);
+            if (!string.IsNullOrEmpty(categoria))
+                query = query.Where(t => t.categoria_ticket.nombre.Contains(categoria));
+            if (!string.IsNullOrEmpty(prioridad))
+                query = query.Where(t => t.prioridad == prioridad);
+            if (!string.IsNullOrEmpty(estado))
+                query = query.Where(t => t.estado == estado);
+
+            var resumen = new DashboardResumenDTO
+            {
+                TicketsNoAsignados = query.Count(t => t.estado == "No asignado"),
+                TicketsEnProgreso = query.Count(t => t.estado == "En Progreso"),
+                TicketsResueltos = query.Count(t => t.estado == "Resuelto")
+            };
+
+            return Ok(resumen);
+        }
+        [HttpGet("dashboard-categoria-filtrada")]
+        public IActionResult TicketsPorCategoriaFiltrada([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] string? categoria)
+        {
+            var query = _context.ticket
+                .Include(t => t.categoria_ticket)
+                .AsQueryable();
+
+            if (fechaInicio.HasValue)
+                query = query.Where(t => t.fecha_inicio >= fechaInicio.Value);
+            if (fechaFin.HasValue)
+                query = query.Where(t => t.fecha_inicio <= fechaFin.Value);
+            if (!string.IsNullOrEmpty(categoria))
+                query = query.Where(t => t.categoria_ticket.nombre.Contains(categoria));
+
+            var resultado = query
+                .GroupBy(t => t.categoria_ticket.nombre)
+                .Select(g => new
+                {
+                    Categoria = g.Key,
+                    Tickets = g.Count()
+                })
+                .ToList();
+
+            return Ok(resultado);
+        }
+      
+        [HttpGet("dashboard-tecnico-filtrado")]
+        public IActionResult RendimientoPorTecnicoFiltrado([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] string? tecnico)
+        {
+            var query = _context.tarea_ticket
+                .Include(t => t.usuario_interno)
+                .Include(t => t.ticket)
+                .AsQueryable();
+
+            if (fechaInicio.HasValue)
+                query = query.Where(t => t.ticket.fecha_inicio >= fechaInicio.Value);
+
+            if (fechaFin.HasValue)
+                query = query.Where(t => t.ticket.fecha_inicio <= fechaFin.Value);
+
+            if (!string.IsNullOrEmpty(tecnico))
+                query = query.Where(t => (t.usuario_interno.nombre + " " + t.usuario_interno.apellido).Contains(tecnico));
+
+            var resultado = query
+                .Where(t => t.estado == "Finalizada")
+                .GroupBy(t => new { t.usuario_interno.nombre, t.usuario_interno.apellido })
+                .Select(g => new
+                {
+                    Tecnico = g.Key.nombre + " " + g.Key.apellido,
+                    TicketsResueltos = g.Count()
+                })
+                .ToList();
+
+            return Ok(resultado);
+        }
+
+
+        // Tiempos promedio de resolución por día de la semana
+        [HttpGet("dashboard-resolucion")]
+public IActionResult TiemposPromedioPorDia()
+{
+    var resultado = _context.ticket
+        .Where(t => t.fecha_fin != null)
+        .AsEnumerable() // A partir de aquí se evalúa en memoria
+        .Select(t => new
+        {
+            Dia = t.fecha_inicio.DayOfWeek.ToString(),
+            Horas = (t.fecha_fin.Value - t.fecha_inicio).TotalHours
+        })
+        .GroupBy(t => t.Dia)
+        .Select(g => new
+        {
+            Dia = g.Key,
+            HorasPromedio = Math.Round(g.Average(x => x.Horas), 1)
+        })
+        .ToList();
+
+    return Ok(resultado);
+}
+
 
         [HttpGet("tickets-cliente/{idUsuario}")]
         public IActionResult TicketsPorCliente(int idUsuario)
@@ -487,9 +627,7 @@ namespace APITicketPro.Controllers
             return Ok(progresos);
         }
 
-
-
-        // ===============================
-
     }
+
+
 }
