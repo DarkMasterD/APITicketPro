@@ -15,5 +15,7 @@ namespace APITicketPro.Models
         public string direccion {  get; set; }
         public string dui {  get; set; }
         public int id_rol {  get; set; }
+        [ForeignKey("id_rol")]
+        public rol rol { get; set; }
     }
 }

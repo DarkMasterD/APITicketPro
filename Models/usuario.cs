@@ -17,5 +17,5 @@ public class usuario
     public usuario_interno usuario_interno { get; set; }
 
     public ICollection<ticket> tickets { get; set; }
-
+    public ICollection<contacto_usuario> contactos { get; set; }
 }
