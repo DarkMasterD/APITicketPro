@@ -290,11 +290,16 @@ namespace APITicketPro.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Validar que el código exista
+            if (string.IsNullOrWhiteSpace(nuevoTicket.codigo))
+                return BadRequest("El código del ticket es obligatorio.");
+
             _context.ticket.Add(nuevoTicket);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Ticket creado", id = nuevoTicket.id_ticket });
         }
+
 
         // Agregar archivo por ticket
         [HttpPost("subir-archivo")]
