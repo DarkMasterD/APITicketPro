@@ -1,4 +1,5 @@
 ﻿using APITicketPro.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -6,6 +7,8 @@ using System.Text.Json.Serialization;
 
 public class ticket
 {
+    internal object tarea_ticket;
+
     [Key]
     public int id_ticket { get; set; }
     public string codigo { get; set; }
@@ -31,6 +34,7 @@ public class ticket
 
 public class ticketDetalleDTO
 {
+    public int id_ticket { get; set; }
     public string Titulo { get; set; }
     public string Servicio { get; set; }
     public string Descripcion { get; set; }
@@ -69,6 +73,21 @@ public class tareaTicketViewModel
     public string Codigo { get; set; }
     public string Titulo { get; set; }
     public string Descripcion { get; set; }
+    // NUEVO: para mostrar el combobox
+    public List<SelectListItem> Tecnicos { get; set; }
+    // NUEVO: para capturar el técnico seleccionado
+    public string IdTecnicoSeleccionado { get; set; }
     public List<TareaTicketItem> Tareas { get; set; }
+}
+
+public class NuevaTareaDto
+{
+    public int IdTicket { get; set; }
+    public int IdUsuarioInterno { get; set; }  // Técnico asignado
+    public string Nombre { get; set; }
+    public string Descripcion { get; set; }
+    public string Estado { get; set; }  // 'Asignada', 'En progreso', etc.
+    public DateTime FechaInicio { get; set; }
+    public DateTime? FechaFin { get; set; }  // Opcional
 }
 
