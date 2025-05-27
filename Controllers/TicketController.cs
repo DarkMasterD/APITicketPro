@@ -147,7 +147,7 @@ namespace APITicketPro.Controllers
                           {
                               Nombre = tarea.nombre,
                               Estado = tarea.estado,
-                              FechaInicio = tarea.fecha_inicio,
+                              FechaInicio = (DateTime)tarea.fecha_inicio,
                               UsuarioAsignado = usuario.nombre + " " + usuario.apellido
                           }).ToList();
 
@@ -651,15 +651,30 @@ public IActionResult TiemposPromedioPorDia()
         [HttpPost("ActualizarTarea")]
         public IActionResult ActualizarTarea([FromBody] NuevaTareaDto tareaEditada)
         {
-            var tarea = _context.tarea_ticket.FirstOrDefault(t => t.id_ticket == tareaEditada.IdTicket && t.nombre == tareaEditada.Nombre);
+            var tarea = _context.tarea_ticket.FirstOrDefault(t =>
+                t.id_ticket == tareaEditada.IdTicket &&
+                t.nombre == tareaEditada.Nombre);
+
             if (tarea == null)
                 return NotFound("Tarea no encontrada");
 
+            // Si ya fue finalizada antes, no permitir edición
+            if (tarea.fecha_fin.HasValue && tarea.fecha_fin.Value != DateTime.MinValue)
+                return BadRequest("La tarea ya fue finalizada y no puede editarse.");
+
+            // Actualizar campos
             tarea.estado = tareaEditada.Estado;
             tarea.descripcion = tareaEditada.Descripcion;
+
+            // Si ahora se marcó como finalizada, guardar fecha_fin actual
+            if (tarea.estado.ToLower() == "finalizada")
+            {
+                tarea.fecha_fin = DateTime.Now;
+            }
 
             _context.SaveChanges();
             return Ok(new { mensaje = "Tarea actualizada correctamente" });
         }
+
     }
 }

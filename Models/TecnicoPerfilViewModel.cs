@@ -2,11 +2,14 @@
 {
     public class TecnicoPerfilViewModel
     {
-        public string NombreCompleto { get; set; } // Combina nombre + apellido
+        public int IdUsuario { get; set; }
+        public string Nombres { get; set; }
+        public string Apellidos { get; set; }
         public string Direccion { get; set; }
         public string Usuario { get; set; }
         public DateTime FechaRegistro { get; set; }
-        public List<ContactoViewModel> Contactos { get; set; } // Nuevo para múltiples contactos
+        public List<ContactoViewModel>? Contactos { get; set; } 
+
     }
 
     public class ContactoViewModel
