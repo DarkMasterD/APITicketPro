@@ -236,7 +236,12 @@ namespace APITicketPro.Controllers
 
             usuario.nombre_usuario = model.Usuario;
             usuario.email = model.Email;
-            usuario.contrasenia = model.Contrasena;
+
+            // Solo actualizar si se proporcionó una nueva contraseña
+            if (!string.IsNullOrWhiteSpace(model.Contrasena))
+            {
+                usuario.contrasenia = BCrypt.Net.BCrypt.HashPassword(model.Contrasena);
+            }
 
             var externo = await _context.usuario_externo
                 .FirstOrDefaultAsync(x => x.id_usuario == model.IdUsuario);
@@ -251,6 +256,7 @@ namespace APITicketPro.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+
 
 
 
