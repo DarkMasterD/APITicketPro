@@ -178,7 +178,5 @@ namespace APITicketPro.Controllers
             await _context.SaveChangesAsync();
             return Ok("Contacto actualizado correctamente");
         }
-
-
     }
 }
