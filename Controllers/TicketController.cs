@@ -371,7 +371,6 @@ namespace APITicketPro.Controllers
             return Ok(model);
         }
 
-        //Actualizar ===============================
         [HttpPost("actualizar-estado")]
         public async Task<IActionResult> ActualizarEstado([FromBody] ActualizarEstadoDTO dto)
         {
@@ -396,8 +395,8 @@ namespace APITicketPro.Controllers
             var progreso = new progreso_ticket
             {
                 id_ticket = dto.IdTicket,
-                id_usuario_interno = 1, // fijo por ahora
-                nombre = "Progreso",
+                id_usuario_interno = dto.IdUsuarioInterno,
+                nombre = "Progreso del ticket",
                 descripcion = dto.Descripcion,
                 fecha = DateTime.Now
             };
@@ -422,7 +421,6 @@ namespace APITicketPro.Controllers
 
             var correo = ticket.usuario.email;
             var tecnico = ticket.tareas.FirstOrDefault()?.usuario_interno;
-            //Este es el cuerpo del correo
             var cuerpo = $@"
                             <div style='font-family: Arial, sans-serif; font-size: 16px; color: #333;'>
                                 <p>Estimado cliente,</p>
@@ -590,9 +588,54 @@ namespace APITicketPro.Controllers
                     Fecha = t.fecha_inicio
                 })
                 .ToList();
-
-            return Ok(tickets);
+                return Ok(tickets);
         }
+
+        [HttpPost("crear")]
+        public async Task<IActionResult> CrearTarea([FromBody] CrearTareaDTO dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var nuevaTarea = new tarea_ticket
+                {
+                    id_ticket = dto.IdTicket,
+                    id_usuario_interno = dto.IdTecnico,
+                    nombre = dto.Titulo,
+                    descripcion = dto.Descripcion,
+                    estado = "Asignada",
+                    fecha_inicio = DateTime.Now
+                };
+
+                _context.tarea_ticket.Add(nuevaTarea);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { mensaje = "Tarea creada exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
+        }
+
+        [HttpGet("tecnicos")]
+        public async Task<IActionResult> ObtenerUsuariosAsignables()
+        {
+            var usuarios = await _context.usuario_interno
+                .Where(ui => ui.id_rol == 1 || ui.id_rol == 2) // admin y técnico
+                .Select(ui => new {
+                    ui.id_usuario_interno,
+                    ui.nombre,
+                    ui.apellido,
+                    ui.id_rol
+                }).ToListAsync();
+
+            return Ok(usuarios);
+        }
+
+        
 
         [HttpGet("gestion-tickets")]
         public IActionResult Todos()

@@ -10,6 +10,7 @@
     {
         public int IdTicket { get; set; }
         public string Descripcion { get; set; }
+        public int IdUsuarioInterno { get; set; }
     }
 
     public class NotificarDTO
