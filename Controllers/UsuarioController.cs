@@ -164,7 +164,6 @@ namespace APITicketPro.Controllers
             return Ok("Contactos agregados correctamente");
         }
 
-
         [HttpPut("actualizar-contacto")]
         public async Task<IActionResult> ActualizarContacto([FromBody] ContactoViewModel dto)
         {
@@ -178,7 +177,6 @@ namespace APITicketPro.Controllers
             await _context.SaveChangesAsync();
             return Ok("Contacto actualizado correctamente");
         }
-
 
     }
 }
