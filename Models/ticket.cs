@@ -7,6 +7,8 @@ using System.Text.Json.Serialization;
 
 public class ticket
 {
+    internal object tarea_ticket;
+
     [Key]
     public int id_ticket { get; set; }
     public string codigo { get; set; }
