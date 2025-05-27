@@ -85,7 +85,8 @@ namespace APITicketPro.Controllers
                            where u.id_usuario == id_usuario
                            select new TecnicoPerfilViewModel
                            {
-                               NombreCompleto = ui.nombre + " " + ui.apellido,
+                               Nombres = ui.nombre,
+                               Apellidos = ui.apellido,
                                Direccion = ui.direccion,
                                Usuario = u.nombre_usuario,
                                FechaRegistro = u.fecha_registro,
@@ -117,10 +118,10 @@ namespace APITicketPro.Controllers
 
             return Ok(contactos);
         }
-    
+
 
         [HttpPost("actualizar-perfil")]
-        public async Task<IActionResult> ActualizarPerfil([FromBody] ActualizarPerfilTecnicoDTO dto)
+        public async Task<IActionResult> ActualizarPerfil([FromBody] TecnicoPerfilViewModel dto)
         {
             var usuario = await _context.usuario.FindAsync(dto.IdUsuario);
             var interno = await _context.usuario_interno.FirstOrDefaultAsync(ui => ui.id_usuario == dto.IdUsuario);
@@ -129,18 +130,14 @@ namespace APITicketPro.Controllers
                 return NotFound("Técnico no encontrado");
 
             usuario.nombre_usuario = dto.Usuario;
+            interno.nombre = dto.Nombres;
+            interno.apellido = dto.Apellidos;
             interno.direccion = dto.Direccion;
-
-            if (!string.IsNullOrWhiteSpace(dto.NombreCompleto))
-            {
-                var partes = dto.NombreCompleto.Trim().Split(" ");
-                interno.nombre = partes[0];
-                interno.apellido = string.Join(" ", partes.Skip(1));
-            }
 
             await _context.SaveChangesAsync();
             return Ok("Perfil actualizado correctamente");
         }
+
 
         [HttpPost("agregar-contactos")]
         public async Task<IActionResult> AgregarContactos([FromBody] List<NuevoContactoDTO> contactos)
