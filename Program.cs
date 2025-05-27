@@ -129,7 +129,81 @@ using (var scope = app.Services.CreateScope())
 
         db.SaveChanges();
     }
+    if (!db.usuario.Any(u => u.nombre_usuario == "admin2"))
+    {
+        // Nuevo ADMIN
+        var admin = new usuario
+        {
+            nombre_usuario = "admin2",
+            email = "admin2@ticketpro.com",
+            contrasenia = BCrypt.Net.BCrypt.HashPassword("Admin456"),
+            tipo_usuario = 'I',
+            estado = true,
+            fecha_registro = DateTime.Now
+        };
+        db.usuario.Add(admin);
+        db.SaveChanges();
+
+        db.usuario_interno.Add(new usuario_interno
+        {
+            id_usuario = admin.id_usuario,
+            nombre = "Ana",
+            apellido = "González",
+            direccion = "San Miguel",
+            dui = "12312312-3",
+            id_rol = 1 // Asegúrate que el rol 1 sea Administrador
+        });
+
+        // Nuevo TECNICO
+        var tecnico = new usuario
+        {
+            nombre_usuario = "tecnico2",
+            email = "tecnico2@ticketpro.com",
+            contrasenia = BCrypt.Net.BCrypt.HashPassword("Tec45678"),
+            tipo_usuario = 'I',
+            estado = true,
+            fecha_registro = DateTime.Now
+        };
+        db.usuario.Add(tecnico);
+        db.SaveChanges();
+
+        db.usuario_interno.Add(new usuario_interno
+        {
+            id_usuario = tecnico.id_usuario,
+            nombre = "Pedro",
+            apellido = "Cruz",
+            direccion = "La Libertad",
+            dui = "45645645-6",
+            id_rol = 2 // Técnico
+        });
+
+        // Nuevo CLIENTE
+        var cliente = new usuario
+        {
+            nombre_usuario = "cliente2",
+            email = "cliente2@empresa.com",
+            contrasenia = BCrypt.Net.BCrypt.HashPassword("Cliente456"),
+            tipo_usuario = 'E',
+            estado = true,
+            fecha_registro = DateTime.Now
+        };
+        db.usuario.Add(cliente);
+        db.SaveChanges();
+
+        db.usuario_externo.Add(new usuario_externo
+        {
+            id_usuario = cliente.id_usuario,
+            nombre = "Laura",
+            apellido = "Martínez",
+            empresa = "Soluciones XYZ"
+        });
+
+        db.SaveChanges();
+    }
+
+
 }
+
 
 
 app.UseCors("AllowFrontend");
