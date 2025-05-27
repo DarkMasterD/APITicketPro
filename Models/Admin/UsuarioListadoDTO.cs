@@ -22,7 +22,7 @@
         public string Usuario { get; set; }
         public string? Email { get; set; }
         public string Empresa { get; set; }
-        public string Contrasena { get; set; }
+        public string? Contrasena { get; set; }
 
         public string? TipoUsuario { get; set; } = "E";
 
