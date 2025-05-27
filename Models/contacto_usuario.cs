@@ -7,7 +7,7 @@ namespace APITicketPro.Models
         [Key]
         public int id_contacto_usuario { get; set; }
         public int id_usuario { get; set; }
-        public string email { get; set; }
-        public string telefono { get; set; }
+        public string? email { get; set; }
+        public string? telefono { get; set; }
     }
 }

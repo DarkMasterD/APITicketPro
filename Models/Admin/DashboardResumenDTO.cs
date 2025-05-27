@@ -7,4 +7,13 @@
         public int TicketsCriticos { get; set; }
         public int TicketsResueltos { get; set; }
     }
+
+    public class TicketsAdminViewModel
+    {
+        public string? Busqueda { get; set; }
+        public string? Estado { get; set; }
+        public string? Prioridad { get; set; }
+        public List<TicketResumenDTO> TicketsFiltrados { get; set; } = new();
+    }
+
 }

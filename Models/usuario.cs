@@ -14,6 +14,8 @@ public class usuario
     public DateTime fecha_registro { get; set; }
 
     public usuario_externo usuario_externo { get; set; }
+    public usuario_interno usuario_interno { get; set; }
 
     public ICollection<ticket> tickets { get; set; }
+
 }

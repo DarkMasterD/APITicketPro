@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class ticket
 {
+    internal object tarea_ticket;
+
     [Key]
     public int id_ticket { get; set; }
     public string codigo { get; set; }

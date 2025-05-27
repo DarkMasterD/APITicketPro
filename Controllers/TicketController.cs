@@ -48,6 +48,7 @@ namespace APITicketPro.Controllers
                     .ThenInclude(tt => tt.usuario_interno)
                 .Select(t => new TicketResumenDTO
                 {
+                    IdTicket = t.id_ticket,
                     Titulo = t.titulo,
                     Cliente = t.usuario.usuario_externo.nombre + " " + t.usuario.usuario_externo.apellido,
                     Tecnico = t.tareas.FirstOrDefault().usuario_interno.nombre ?? "No asignado",
@@ -59,6 +60,57 @@ namespace APITicketPro.Controllers
 
             return Ok(tickets);
         }
+
+        [HttpGet("resumen-tickets/estado")]
+        public IActionResult ObtenerTicketsPorEstado(string estado)
+        {
+            var tickets = _context.ticket
+                .Where(t => t.estado == estado)
+                .Include(t => t.usuario)
+                    .ThenInclude(u => u.usuario_externo)
+                .Include(t => t.tareas)
+                    .ThenInclude(tt => tt.usuario_interno)
+                .Select(t => new TicketResumenDTO
+                {
+                    Titulo = t.titulo,
+                    Cliente = t.usuario.usuario_externo.nombre + " " + t.usuario.usuario_externo.apellido,
+                    Tecnico = t.tareas.FirstOrDefault().usuario_interno.nombre ?? "No asignado",
+                    Estado = t.estado,
+                    Prioridad = t.prioridad,
+                    Fecha = t.fecha_inicio
+                })
+                .ToList();
+
+            return Ok(tickets);
+        }
+
+        [HttpGet("gestion-tickets")]
+        public IActionResult Todos()
+        {
+            var resultado = _context.ticket
+                .Include(t => t.usuario)
+                    .ThenInclude(u => u.usuario_externo)
+                .Include(t => t.tareas)
+                    .ThenInclude(tt => tt.usuario_interno)
+                .Select(t => new TicketResumenDTO
+                {
+                    IdTicket = t.id_ticket,
+                    Titulo = t.titulo,
+                    Cliente = t.usuario.usuario_externo.nombre ?? "Sin nombre",
+                    Tecnico = t.tareas
+                        .OrderByDescending(tt => tt.fecha_inicio)
+                        .Select(tt => tt.usuario_interno.nombre)
+                        .FirstOrDefault() ?? "No asignado",
+                    Estado = t.estado,
+                    Prioridad = t.prioridad,
+                    Fecha = t.fecha_inicio
+                })
+                .ToList();
+
+            return Ok(resultado);
+        }
+
+
 
     }
 }
