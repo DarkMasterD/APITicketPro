@@ -1,9 +1,14 @@
+using APITicketPro.Helpers;
 using APITicketPro.Models;
 using APITicketPro.Services;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var context = new CustomAssemblyLoadContext();
+context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "libwkhtmltox", "libwkhtmltox.dll"));
 // Add services to the container.
 
 // PARA PERMITIR CORS EN LA API
@@ -22,6 +27,9 @@ builder.Services.AddDbContext<DBTicketProContext>(options =>
             builder.Configuration.GetConnectionString("TicketProDBConnection")
         )
 );
+builder.Services.AddControllersWithViews(); // Esto habilita las vistas para el ViewRenderer
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+builder.Services.AddScoped<ViewRenderer>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

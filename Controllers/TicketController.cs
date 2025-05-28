@@ -147,7 +147,7 @@ namespace APITicketPro.Controllers
                           {
                               Nombre = tarea.nombre,
                               Estado = tarea.estado,
-                              FechaInicio = tarea.fecha_inicio,
+                              FechaInicio = (DateTime)tarea.fecha_inicio,
                               UsuarioAsignado = usuario.nombre + " " + usuario.apellido
                           }).ToList();
 
@@ -290,11 +290,16 @@ namespace APITicketPro.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Validar que el código exista
+            if (string.IsNullOrWhiteSpace(nuevoTicket.codigo))
+                return BadRequest("El código del ticket es obligatorio.");
+
             _context.ticket.Add(nuevoTicket);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Ticket creado", id = nuevoTicket.id_ticket });
         }
+
 
         // Agregar archivo por ticket
         [HttpPost("subir-archivo")]
@@ -720,7 +725,54 @@ public IActionResult TiemposPromedioPorDia()
             return Ok(progresos);
         }
 
+        [HttpGet("historial-tecnico/{idTecnico}")]
+        public async Task<IActionResult> ObtenerHistorialPorTecnico(int idTecnico)
+        {
+            var historial = await _context.tarea_ticket
+                .Include(t => t.ticket)
+                    .ThenInclude(t => t.categoria_ticket)
+                .Where(t => t.id_usuario_interno == idTecnico)
+                .Select(t => new
+                {
+                    IdTicket = t.id_ticket,
+                    Titulo = t.ticket.titulo,
+                    Estado = t.ticket.estado,
+                    Categoria = t.ticket.categoria_ticket.nombre,
+                    Prioridad = t.ticket.prioridad,
+                    Fecha = t.ticket.fecha_inicio
+                })
+                .Distinct()
+                .ToListAsync();
+
+            return Ok(historial);
+        }
+        [HttpPost("ActualizarTarea")]
+        public IActionResult ActualizarTarea([FromBody] NuevaTareaDto tareaEditada)
+        {
+            var tarea = _context.tarea_ticket.FirstOrDefault(t =>
+                t.id_ticket == tareaEditada.IdTicket &&
+                t.nombre == tareaEditada.Nombre);
+
+            if (tarea == null)
+                return NotFound("Tarea no encontrada");
+
+            // Si ya fue finalizada antes, no permitir edición
+            if (tarea.fecha_fin.HasValue && tarea.fecha_fin.Value != DateTime.MinValue)
+                return BadRequest("La tarea ya fue finalizada y no puede editarse.");
+
+            // Actualizar campos
+            tarea.estado = tareaEditada.Estado;
+            tarea.descripcion = tareaEditada.Descripcion;
+
+            // Si ahora se marcó como finalizada, guardar fecha_fin actual
+            if (tarea.estado.ToLower() == "finalizada")
+            {
+                tarea.fecha_fin = DateTime.Now;
+            }
+
+            _context.SaveChanges();
+            return Ok(new { mensaje = "Tarea actualizada correctamente" });
+        }
+
     }
-
-
 }
