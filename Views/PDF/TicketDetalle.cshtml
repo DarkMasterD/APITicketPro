@@ -1,0 +1,28 @@
+﻿@model APITicketPro.Models.TicketDTO
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #1e1e1e;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>🎫 Detalle del Ticket</h2>
+    <p><span class="label">Título:</span> @Model.Titulo</p>
+    <p><span class="label">Descripción:</span> @Model.Descripcion</p>
+    <p><span class="label">Fecha:</span> @Model.Fecha.ToShortDateString()</p>
+</body>
+</html>
