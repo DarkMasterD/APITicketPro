@@ -26,6 +26,16 @@ namespace APITicketPro.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
+                var ticket = await _context.ticket.FirstOrDefaultAsync(t => t.id_ticket == dto.IdTicket);
+                var existeTecnico = await _context.usuario_interno.AnyAsync(u => u.id_usuario_interno == dto.IdTecnico);
+
+                if (ticket == null)
+                    return BadRequest("El ticket no existe.");
+
+                if (!existeTecnico)
+                    return BadRequest("El técnico no existe.");
+
+                // Crear la nueva tarea
                 var nuevaTarea = new tarea_ticket
                 {
                     id_ticket = dto.IdTicket,
@@ -35,15 +45,13 @@ namespace APITicketPro.Controllers
                     estado = "Asignada",
                     fecha_inicio = DateTime.Now
                 };
-                var existeTicket = await _context.ticket.AnyAsync(t => t.id_ticket == dto.IdTicket);
-                var existeTecnico = await _context.usuario_interno.AnyAsync(u => u.id_usuario_interno == dto.IdTecnico);
 
-                if (!existeTicket)
-                    return BadRequest("El ticket no existe.");
-
-                if (!existeTecnico)
-                    return BadRequest("El técnico no existe.");
-
+                // Cambiar estado del ticket si estaba en "No asignado"
+                if (ticket.estado == "No asignado")
+                {
+                    ticket.estado = "En Progreso";
+                    _context.ticket.Update(ticket);
+                }
 
                 _context.tarea_ticket.Add(nuevaTarea);
                 await _context.SaveChangesAsync();
@@ -55,7 +63,6 @@ namespace APITicketPro.Controllers
                 return StatusCode(500, $"Error interno: {ex.Message} - {ex.InnerException?.Message}");
             }
         }
-
 
         [HttpGet("usuarios-internos")]
         public IActionResult ObtenerTecnicos()

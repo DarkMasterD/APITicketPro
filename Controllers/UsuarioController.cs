@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using APITicketPro.Models.Admin;
 using Microsoft.EntityFrameworkCore;
 using APITicketPro.Models;
+using BCrypt.Net;
+using System.Diagnostics;
 
 namespace APITicketPro.Controllers
 {
@@ -210,7 +212,7 @@ namespace APITicketPro.Controllers
         }
 
         [HttpPost("crear-externo")]
-        public async Task<IActionResult> CrearExterno([FromBody] UsuarioExternoViewModel model)
+        public async Task<IActionResult> CrearExterno([FromBody] UsuarioEditarViewModel model)
         {
 
             try
@@ -220,7 +222,7 @@ namespace APITicketPro.Controllers
                 {
                     nombre_usuario = model.Usuario,
                     email = model.Email,
-                    contrasenia = model.Contrasena,
+                    contrasenia = BCrypt.Net.BCrypt.HashPassword(model.Contrasena),
                     tipo_usuario = 'E',
                     estado = true,
                     fecha_registro = DateTime.Now
@@ -289,36 +291,215 @@ namespace APITicketPro.Controllers
             return Ok(usuario);
         }
 
-
-        [HttpPut("actualizar-externo")]
-        public async Task<IActionResult> ActualizarUsuarioExterno([FromBody] UsuarioExternoViewModel model)
+        [HttpGet("obtener-user/{id}")]
+        public async Task<IActionResult> ObtenerUsuario(int id)
         {
-            if (model.IdUsuario == null) return BadRequest("Id de usuario requerido.");
+            var usuario = await _context.usuario.FindAsync(id);
+            if (usuario == null)
+                return NotFound("Usuario no encontrado.");
+
+            if (usuario.tipo_usuario == 'E')
+            {
+                var externo = await _context.usuario_externo.FirstOrDefaultAsync(x => x.id_usuario == id);
+                if (externo == null)
+                    return NotFound("Usuario externo no encontrado.");
+
+                return Ok(new UsuarioExternoViewModel
+                {
+                    IdUsuario = usuario.id_usuario,
+                    Usuario = usuario.nombre_usuario,
+                    Email = usuario.email,
+                    Nombre = externo.nombre,
+                    Apellido = externo.apellido,
+                    Empresa = externo.empresa,
+                    TipoUsuario = 'E'.ToString()
+                });
+            }
+            else if (usuario.tipo_usuario == 'I')
+            {
+                var interno = await _context.usuario_interno.FirstOrDefaultAsync(x => x.id_usuario == id);
+                if (interno == null)
+                    return NotFound("Usuario interno no encontrado.");
+
+                return Ok(new UsuarioInternoViewModel
+                {
+                    IdUsuario = usuario.id_usuario,
+                    Usuario = usuario.nombre_usuario,
+                    Email = usuario.email,
+                    Nombre = interno.nombre,
+                    Apellido = interno.apellido,
+                    Direccion = interno.direccion,
+                    Dui = interno.dui,
+                    IdRol = interno.id_rol,
+                    TipoUsuario = "I"
+                });
+            }
+
+            return BadRequest("Tipo de usuario no reconocido.");
+        }
+
+        [HttpPut("actualizar")]
+        public async Task<IActionResult> ActualizarUsuario([FromBody] UsuarioEditarViewModel model)
+        {
+            Debug.WriteLine($"=== Actualizando usuario {model.IdUsuario} ===");
 
             var usuario = await _context.usuario.FindAsync(model.IdUsuario);
-            if (usuario == null) return NotFound();
+            if (usuario == null)
+            {
+                Debug.WriteLine("⚠️ Usuario no encontrado");
+                return NotFound("Usuario no encontrado.");
+            }
+
+            Debug.WriteLine($"Tipo de usuario: {usuario.tipo_usuario}");
 
             usuario.nombre_usuario = model.Usuario;
             usuario.email = model.Email;
 
-            // Solo actualizar si se proporcionó una nueva contraseña
             if (!string.IsNullOrWhiteSpace(model.Contrasena))
             {
                 usuario.contrasenia = BCrypt.Net.BCrypt.HashPassword(model.Contrasena);
             }
 
-            var externo = await _context.usuario_externo
-                .FirstOrDefaultAsync(x => x.id_usuario == model.IdUsuario);
-
-            if (externo != null)
+            if (usuario.tipo_usuario == 'E')
             {
-                externo.nombre = model.Nombre;
-                externo.apellido = model.Apellido;
-                externo.empresa = model.Empresa;
+                Debug.WriteLine("➡️ Es externo. Buscando en usuario_externo...");
+
+                var externo = await _context.usuario_externo.FirstOrDefaultAsync(x => x.id_usuario == model.IdUsuario);
+                if (externo != null)
+                {
+                    Debug.WriteLine("✅ Externo encontrado. Actualizando datos.");
+                    externo.nombre = model.Nombre;
+                    externo.apellido = model.Apellido;
+                    externo.empresa = model.Empresa;
+                }
+                else
+                {
+                    Debug.WriteLine("❌ No se encontró el registro en usuario_externo.");
+                }
+            }
+            else if (usuario.tipo_usuario == 'I')
+            {
+                Debug.WriteLine("➡️ Es interno.");
+
+                var interno = await _context.usuario_interno.FirstOrDefaultAsync(x => x.id_usuario == model.IdUsuario);
+                if (interno != null)
+                {
+                    interno.nombre = model.Nombre;
+                    interno.apellido = model.Apellido;
+                    interno.direccion = model.Direccion;
+                    interno.dui = model.Dui;
+
+                    if (model.IdRol.HasValue)
+                        interno.id_rol = model.IdRol.Value;
+                }
+            }
+            else
+            {
+                Debug.WriteLine("❌ Tipo de usuario inválido.");
+                return BadRequest("Tipo de usuario no válido");
             }
 
             await _context.SaveChangesAsync();
-            return Ok();
+            Debug.WriteLine("✔️ Cambios guardados.");
+
+            return Ok("✅ Usuario actualizado correctamente.");
+
+        }
+
+
+        [HttpPost("crear-interno")]
+        public async Task<IActionResult> CrearInterno([FromBody] UsuarioEditarViewModel model)
+        {
+            try
+            {
+                if (!model.IdRol.HasValue)
+                    return BadRequest("Debe seleccionar un rol para el usuario interno.");
+
+                var nuevoUsuario = new usuario
+                {
+                    nombre_usuario = model.Usuario,
+                    email = model.Email,
+                    contrasenia = BCrypt.Net.BCrypt.HashPassword(model.Contrasena),
+                    tipo_usuario = 'I',
+                    estado = true,
+                    fecha_registro = DateTime.Now
+                };
+
+                _context.usuario.Add(nuevoUsuario);
+                await _context.SaveChangesAsync();
+
+                var interno = new usuario_interno
+                {
+                    id_usuario = nuevoUsuario.id_usuario,
+                    nombre = model.Nombre,
+                    apellido = model.Apellido,
+                    direccion = model.Direccion,
+                    dui = model.Dui,
+                    id_rol = model.IdRol.Value
+                };
+
+                _context.usuario_interno.Add(interno);
+                await _context.SaveChangesAsync();
+
+                return Created("", new { idUsuario = nuevoUsuario.id_usuario });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var mensaje = dbEx.InnerException?.Message;
+
+                if (mensaje != null && mensaje.Contains("UQ__usuario__D4D22D74"))
+                    return Conflict("El nombre de usuario ya está en uso.");
+                if (mensaje != null && mensaje.Contains("UQ__usuario__AB6E6164"))
+                    return Conflict("El correo electrónico ya está registrado.");
+                if (mensaje != null && mensaje.Contains("UQ__usuario_interno__DUI"))
+                    return Conflict("El número de DUI ya está registrado.");
+
+                return StatusCode(500, "Error al guardar: " + mensaje);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error inesperado: " + ex.Message);
+            }
+        }
+
+        [HttpDelete("eliminar/{id}")]
+        public async Task<IActionResult> EliminarUsuario(int id)
+        {
+            var usuario = await _context.usuario.FirstOrDefaultAsync(u => u.id_usuario == id);
+
+            if (usuario == null)
+                return NotFound("Usuario no encontrado.");
+
+            if (usuario.tipo_usuario == 'I')
+            {
+                // Verifica si es un usuario interno administrador
+                var interno = await _context.usuario_interno.FirstOrDefaultAsync(ui => ui.id_usuario == id);
+                if (interno != null)
+                {
+                    var rol = await _context.rol.FirstOrDefaultAsync(r => r.id_rol == interno.id_rol);
+                    if (rol != null && rol.nombre == "Administrador")
+                        return BadRequest("❌ No se puede eliminar a un usuario administrador.");
+
+                    // Primero se elimina usuario_interno
+                    _context.usuario_interno.Remove(interno);
+                }
+            }
+            else if (usuario.tipo_usuario == 'E')
+            {
+                var externo = await _context.usuario_externo.FirstOrDefaultAsync(ue => ue.id_usuario == id);
+                if (externo != null)
+                    _context.usuario_externo.Remove(externo);
+            }
+
+            // Eliminar contactos si los hay
+            var contactos = await _context.contacto_usuario.Where(c => c.id_usuario == id).ToListAsync();
+            _context.contacto_usuario.RemoveRange(contactos);
+
+            // Finalmente eliminar el usuario
+            _context.usuario.Remove(usuario);
+            await _context.SaveChangesAsync();
+
+            return Ok("✅ Usuario eliminado con éxito.");
         }
 
 
