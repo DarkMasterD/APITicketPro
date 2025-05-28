@@ -48,6 +48,20 @@ namespace APITicketPro.Controllers
 
             return Ok("cliente");
         }
+ 
+        [HttpGet("interno/{idUsuario}")]
+        public async Task<IActionResult> ObtenerIdInterno(int idUsuario)
+        {
+            var interno = await _context.usuario_interno
+                .Where(ui => ui.id_usuario == idUsuario)
+                .Select(ui => new { id_usuario_interno = ui.id_usuario_interno })
+                .FirstOrDefaultAsync();
+
+            if (interno == null)
+                return NotFound(new { mensaje = "No se encontró el usuario interno" });
+
+            return Ok(interno);
+        }
 
     }
 }

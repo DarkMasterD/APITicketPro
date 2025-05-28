@@ -183,5 +183,26 @@ namespace APITicketPro.Controllers
             return Ok("Contraseña actualizada.");
         }
 
+        [HttpPut("contacto/{id}")]
+        public async Task<IActionResult> EditarContacto(int id, [FromBody] contacto_usuario contacto)
+        {
+            var existente = await _context.contacto_usuario.FindAsync(id);
+            if (existente == null)
+                return NotFound("Contacto no encontrado.");
+
+            // Validación: al menos un dato debe ser enviado
+            if (string.IsNullOrWhiteSpace(contacto.email) && string.IsNullOrWhiteSpace(contacto.telefono))
+                return BadRequest("Debe ingresar al menos un correo o un teléfono.");
+
+            // Actualizar solo los campos que llegan
+            existente.email = contacto.email;
+            existente.telefono = contacto.telefono;
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Contacto actualizado correctamente.");
+        }
+
+
     }
 }
